@@ -26,8 +26,9 @@ const HUGO_VERSION = "0.128.2";
 const PLATFORMS = {
   "linux-x64": { file: `hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz`, bin: "hugo" },
   "linux-arm64": { file: `hugo_extended_${HUGO_VERSION}_linux-arm64.tar.gz`, bin: "hugo" },
-  "darwin-x64": { file: `hugo_extended_${HUGO_VERSION}_darwin-amd64.tar.gz`, bin: "hugo" },
-  "darwin-arm64": { file: `hugo_extended_${HUGO_VERSION}_darwin-arm64.tar.gz`, bin: "hugo" },
+  // Hugo 0.128.2 的 macOS Extended 制品统一发布为 universal。
+  "darwin-x64": { file: `hugo_extended_${HUGO_VERSION}_darwin-universal.tar.gz`, bin: "hugo" },
+  "darwin-arm64": { file: `hugo_extended_${HUGO_VERSION}_darwin-universal.tar.gz`, bin: "hugo" },
 };
 
 const RELEASE_URL = `https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}`;
@@ -52,10 +53,13 @@ function main() {
     process.exit(1);
   }
 
-  const proxies = [
-    process.env.GITHUB_PROXY || "https://ghfast.top/",
-    "",
-  ].filter(Boolean).map((p) => p.replace(/\/?$/, "/") + RELEASE_URL + "/" + target.file);
+  // 代理地址不可用时必须继续尝试 GitHub 官方地址。此前先 filter(Boolean)
+  // 会把用于直连的空前缀删掉，实际行为与文件头的“直连兜底”约定不一致。
+  const prefixes = [process.env.GITHUB_PROXY || "https://ghfast.top/", ""];
+  const proxies = [...new Set(prefixes)].map((prefix) => {
+    if (!prefix) return RELEASE_URL + "/" + target.file;
+    return prefix.replace(/\/?$/, "/") + RELEASE_URL + "/" + target.file;
+  });
 
   fs.mkdirSync(binDir, { recursive: true });
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "hugo-"));
