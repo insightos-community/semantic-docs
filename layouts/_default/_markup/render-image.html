@@ -1,0 +1,3 @@
+{{ $src := .Destination -}}
+{{ $src = replaceRE `^(\.\./)*static/` `/` $src -}}
+<img src="{{ $src | safeURL }}" alt="{{ .Text }}"{{ with .Title }} title="{{ . }}"{{ end }} loading="lazy">

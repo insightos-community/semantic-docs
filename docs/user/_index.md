@@ -6,48 +6,66 @@ cascade:
   type: docs
 ---
 
-Semantic 用户手册面向使用 Semantic 构建和运行具身应用的用户。它从 Project 开始，依次介绍 Studio、Agent 协作、任务规划、环境、Robot 执行和运行维护。
+Semantic 用户手册面向使用 Semantic Studio 构建、运行和观察具身应用的用户。手册以 Project 为主线：先完成安装与登录，再配置模型和仿真环境，随后通过 Conversation 让 Agent 生成计划，并在 Studio 中观察 Workflow、Robot 和运行证据。
 
-一条典型使用路径如下：
+## 先理解整体链路
+
+从用户角度看，Semantic 的前端是 Semantic Studio；后端是 Semantic Server。Studio 不直接控制模型、仿真或机器人，它只通过 Server API 和 WebSocket 获取状态、提交操作。
 
 ```mermaid
 flowchart LR
-    A[创建 Project] --> B[连接环境与 Robot]
-    B --> C[在 Conversation 中描述目标]
-    C --> D[审阅并批准 Plan]
-    D --> E[观察 Workflow 与 Robot Execution]
-    E --> F[查看结果、运行信息和 Artifact]
+    U[用户] --> W[Semantic Studio<br/>Web 前端]
+    W --> S[Semantic Server<br/>HTTP API / WebSocket]
+    S --> A[Agent Team<br/>Leader / Robot / Map / Monitor]
+    A --> P[Plan Proposal]
+    P --> F[Workflow / Task]
+    S --> SIM[SimulationService<br/>Scene / Runtime / Map]
+    F --> R[Pilot<br/>Robot Skill Worker]
+    R --> AB[AbilityFramework<br/>七类 Ability]
+    AB --> RB[Robot SDK<br/>仿真或真实 Robot]
+    SIM --> W
+    R --> W
 ```
 
-## 从哪里开始
+这条链路里有三个边界：
 
-- 初次使用 Semantic：阅读[安装与启动](/user/getting-started/install-and-start/)和[第一个 Project](/user/getting-started/first-project/)。
-- 了解日常工作界面：阅读[Project 与 Semantic Studio](/user/workspace/project-and-studio/)。
-- 通过 Agent 完成任务：阅读[Conversation、Agent 与 Interaction](/user/collaboration/conversation-agents-and-interactions/)和[计划与 Workflow](/user/workflow/planning-and-execution/)。
-- 使用仿真或真机：阅读[仿真环境](/user/environments/simulation/)和[连接真实 Robot](/user/environments/real-robot/)。
-- 查看机器人执行：阅读[Robot 执行与观察](/user/robot/execute-and-observe/)。
-- 诊断运行问题：阅读[运行维护](/user/operations/runtime-operations/)和[问题排查](/user/troubleshooting/)。
+- **Studio**：展示和操作入口，负责 Project、页面布局、对话、场景查看和运行观察。
+- **Server**：统一保存 Project、Conversation、Workflow、模型配置、Runtime 和 Robot 状态。
+- **执行端**：Pilot、AbilityFramework、Robot SDK 和 Simulation Runtime 完成真实或仿真执行。
+
+## 推荐阅读顺序
+
+1. [安装与启动](getting-started/install-and-start.md)：启动 Server、Web 和必要的仿真 Runtime。
+2. [最佳实践：从 Project 到规划](getting-started/best-practice.md)：按截图完成一条完整、可复现的默认流程。
+3. [Project 与 Semantic Studio](workspace/project-and-studio.md)：理解前端页面结构、每个区域的作用和主要操作流。
+4. [Conversation、Agent 与 Interaction](collaboration/conversation-agents-and-interactions.md)：学会向 Agent 描述目标、回答追问和理解协作结果。
+5. [计划与 Workflow](workflow/planning-and-execution.md)：理解 Plan Proposal、批准执行、暂停、恢复和停止。
+6. [仿真环境](environments/simulation.md)或[连接真实 Robot](environments/real-robot.md)：根据实际运行环境继续深入。
 
 ## 手册结构
 
-| 部分 | 内容 |
+| 部分 | 你会学到什么 |
 |---|---|
-| 快速开始 | 安装、启动、创建 Project 和完成第一个 Robot 任务 |
-| 工作空间 | Project 中的资源、Conversation、运行视图和 Studio 工具 |
-| 协作 | 用户与多个 Agent 的沟通、结构化 Interaction 和结果汇总 |
-| 计划与执行 | Plan Proposal、Workflow、Task、暂停、恢复和停止 |
-| 环境与 Robot | 仿真 Scene、Runtime、Pilot、真机接入和设备状态 |
-| Robot 执行 | Robot Skill、Stage、Action、Observation 和 Artifact |
-| 运维与排查 | 服务状态、日志、重连、执行异常和安全停止 |
+| [快速开始](getting-started/_index.md) | 安装启动、登录和截图版最佳实践 |
+| [工作空间](workspace/_index.md) | Project、Semantic Studio 页面结构、前端各区域的作用 |
+| [协作](collaboration/_index.md) | Conversation、Leader、Robot Agent、结构化 Interaction |
+| [计划与执行](workflow/_index.md) | Plan Proposal、Workflow、Task、恢复和停止 |
+| [环境与 Robot](environments/_index.md) | MuJoCo 仿真、Runtime、真实 Robot 接入 |
+| [Robot 执行](robot/_index.md) | Robot Skill、Stage、Action、Observation 和 Artifact |
+| [运行维护](operations/_index.md) | 服务状态、日志、重连、Runtime 和常见维护动作 |
+| [问题排查](troubleshooting/_index.md) | 登录、端口、Runtime、模型和设备异常的定位方法 |
 
 ## 使用中的核心对象
 
-- **Project**：承载具身应用目标、资源和运行历史的工作空间。
-- **Semantic Studio**：浏览、编辑、运行和观察 Project 的工具。
-- **Conversation**：用户与 Leader 及其他 Agent 协作的主要入口。
-- **Plan Proposal**：Agent 根据目标提出、由用户审阅的执行方案。
-- **Workflow**：获批计划的运行过程，由相互依赖的 Task 组成。
-- **Robot Execution**：一次 Robot Skill 的实际执行，记录 Stage、Action 和运行结果。
-- **Environment**：Robot 工作的空间及其对象、区域、传感信息和 Semantic Map。
+- **Project**：承载目标、资源选择、Conversation、运行历史和工作布局。
+- **Semantic Studio**：用户日常使用的 Web 前端。
+- **Conversation**：用户与 Leader 及其他 Agent 协作的入口。
+- **Plan Proposal**：Agent 生成、由用户审阅和批准的计划。
+- **Workflow**：获批计划的运行过程，由 Task 和 SubTask 组成。
+- **Scene / Layout**：仿真环境及可启动的初始布局。
+- **Robot Execution**：一次 Robot Skill 的实际执行及阶段证据。
+- **Artifact**：执行产生的图片、文件、传感器数据和其他结果。
 
-这些对象贯穿仿真和真机。运行环境不同，Project 中的目标、协作方式和观察入口保持一致。
+## GitHub 阅读说明
+
+仓库内的文档链接统一使用相对的 `.md` 文件路径，保证在 GitHub 源码页可以直接跳转。Hugo 文档站构建时会通过链接渲染钩子自动转换为部署后的页面 URL。若 GitHub 上仍出现 404，请先确认当前分支是否已包含目标文件；未合并到 `main` 的新文档在 `main` 分支上不可访问。

@@ -5,6 +5,12 @@ weight: 10
 
 Plan Proposal 将自然语言目标整理为可审阅的主要 Task 和依赖。用户批准后，系统创建 Workflow 并开始分配 Agent 与 Robot。
 
+点击对话中的"查看计划"会打开 Plan 详情页，显示批准范围（Robot、允许技能、搬运对象、目标区域）、完成条件、主要流程和 TODO。下图同时展示了 Plan 详情和批准后的真实执行过程。
+
+![Plan 详情与执行过程](../../../static/images/user/getting-started/plan-detail.png)
+
+计划卡是把自然语言目标变成可执行边界的入口。批准前，它是可修改方案；批准后，它会按精确 revision 创建 Workflow。
+
 ## 生成 Plan Proposal
 
 Leader 根据 Conversation、Project 资源和工具查询结果生成计划。计划卡包含：
@@ -17,6 +23,15 @@ Leader 根据 Conversation、Project 资源和工具查询结果生成计划。�
 - Proposal revision。
 
 继续讨论时，Leader 可以提交新的 revision。卡片会更新为最新内容，旧 revision 保留在历史中。
+
+审阅时重点检查：
+
+- 来源和目标区域是否正确；
+- 允许使用的 Robot 是否正确；
+- 允许使用的 Robot Skill 是否过宽；
+- 主要 Task 是否覆盖了全部目标；
+- 完成条件是否能被观察或验证；
+- 是否有不应触碰的对象、区域或下层箱体。
 
 ## 批准并执行
 
@@ -32,6 +47,10 @@ Workflow 创建后：
 
 多个无依赖 Task 可以并行执行。单个 Task 内的 Robot SubTask 按执行结果逐项推进。
 
+![Workflow 执行过程](../../../static/images/user/getting-started/wf-execution-inspector.png)
+
+上图是一个真实的 Workflow 执行过程：Physics Viewer 中 Robot 正在抓取箱体，底部显示 Task 已分解为 4 个 SubTask（空载导航、抓取、携物导航、放置验证），当前 SubTask 2/4 运行中，Stage 时间轴显示"检查目标、规划路线、导航、确认到达"已完成，右侧 Inspector 显示当前 SubTask 的详细属性和 Workflow Revision。
+
 ## 观察 Task
 
 Task 卡展示：
@@ -43,6 +62,10 @@ Task 卡展示：
 - SubTask 完成进度。
 
 点击 Task 后，Inspector 展示输入、完成条件、SubTask、最近 Agent Run、Robot Execution、结果和 Artifact。
+
+![Execution 运行日志](../../../static/images/user/getting-started/execution-logs.png)
+
+底部"过程"页适合确认当前运行是否完成、失败、等待用户或仍在推进。切换到"日志"页可以看到 Execution 每个 Stage 的动作（如 `robot.get_state`、`verify_tool_load`、`perception.locate_object`）及其输出，以及"已形成无滑移的双侧稳定承载"等关键状态判断。它与 Task 卡读取同一份执行状态，但更偏向时间线和调试。
 
 ## 暂停与恢复
 

@@ -5,6 +5,10 @@ weight: 10
 
 运行维护关注 Server、Runtime、Pilot、Robot 和执行状态。全局设备中心与 Project 运行面板提供日常入口。
 
+![设备中心](../../../static/images/user/getting-started/12-devices.png)
+
+日常巡检先看设备中心：Pilot 是否在线、Robot 是否空闲、Ability 是否健康、当前是否有活动执行。它能快速区分“服务不可用”“设备离线”和“任务仍在占用”。
+
 ## 日常检查
 
 建议依次检查：
@@ -14,7 +18,7 @@ weight: 10
 3. Runtime Installation 在线。
 4. Pilot 心跳正常。
 5. AbilityFramework 和所需 Ability ready。
-6. Robot Skill desired/actual 一致。
+6. Robot Skill 期望 / 实际状态一致。
 7. Robot 空闲、未处于 hold 或错误状态。
 
 Framework 开发环境可以使用：
@@ -23,6 +27,18 @@ Framework 开发环境可以使用：
 make doctor
 make logs
 ```
+
+预编译产物实例使用：
+
+```bash
+semanticctl status
+semanticctl doctor
+semanticctl logs
+```
+
+![系统设置](../../../static/images/user/getting-started/focus-model-settings.png)
+
+系统设置用于确认模型服务和仿真 Runtime。模型异常先看模型服务是否已连接；场景启动异常先看 Runtime Installation 是否 ready。
 
 ## 关键文件与目录位置
 
@@ -47,6 +63,10 @@ Web 首次通过 REST 读取快照，随后通过 WebSocket 接收增量事件�
 
 Pilot 使用专用 credential 重连。Server 根据 Robot 的实时状态、活动 Task 和 Execution 恢复设备占用和执行视图。
 
+![底部日志](../../../static/images/user/getting-started/focus-bottom-logs.png)
+
+底部日志用于定位某一次 Agent Run、Workflow 或 Robot Execution 的详细过程；Server 日志文件用于定位服务级问题。排障时先确认问题属于哪一层，再选择对应日志。
+
 ## 更新 Robot 制品
 
 SDK、Ability、Robot Skill 或类型包更新后，使用项目提供的正式构建入口生成新制品，再重启受管 Robot 实例。MuJoCo 产品开发环境提供：
@@ -63,13 +83,11 @@ make refresh-v050-mujoco-bundle
 
 备份 SQLite 前先停止 Server，然后整体拷贝安装根下的 `data/` 目录（包含 `semantic.db` 及其 `-wal`/`-shm` 伴随文件）。Server 运行中数据库处于 WAL 模式，直接拷贝可能得到不一致的副本。Pilot 数据目录（默认 `.output/semantic-pilot`）按同样的"停机后整目录拷贝"方式处理。需要重建开发数据时，使用 `semantic init --reset-data`：旧数据会自动移入 `backups/`，不会直接丢弃。
 
-<!-- TODO(实跑): 实际执行一次停机备份与恢复（含 -wal/-shm 文件），验证恢复后 Server 可正常启动。 -->
-
 ### 升级版本与制品
 
 制品（SDK、Ability、Robot Skill、类型包、Bundle）的日常更新见上文[更新 Robot 制品](#更新-robot-制品)。升级 Semantic 版本时：
 
-1. 先阅读[发布记录](/releases/)对应版本页，确认破坏性变化、配置迁移步骤和组件兼容矩阵；
+1. 先阅读[发布记录](../../releases/_index.md)对应版本页，确认破坏性变化、配置迁移步骤和组件兼容矩阵；
 2. 按[备份元数据](#备份元数据)完成备份；
 3. 按发布记录中的升级顺序操作，升级后用[日常检查](#日常检查)确认服务健康。
 
@@ -81,7 +99,7 @@ Server 首次启动时自动创建种子用户 `admin`，初始密码取配置�
 
 ### 登录后提示 token 过期
 
-访问 token 是存储在 Server SQLite 中的 opaque token，有效期为 24 小时（源码：`internal/server/auth/service.go`）。过期后请求返回 `AUTH_TOKEN_EXPIRED`，重新登录即可；也可以在过期前用 `POST /api/v1/auth/refresh` 以旧 token 换发新 token，旧 token 立即作废（API 细节见 [HTTP API 参考](/developer/reference/api/http/)）。
+访问 token 是存储在 Server SQLite 中的 opaque token，有效期为 24 小时（源码：`internal/server/auth/service.go`）。过期后请求返回 `AUTH_TOKEN_EXPIRED`，重新登录即可；也可以在过期前用 `POST /api/v1/auth/refresh` 以旧 token 换发新 token，旧 token 立即作废（API 细节见 [HTTP API 参考](../../developer/reference/api/http.md)）。
 
 ### 模型密钥未配置有什么表现
 

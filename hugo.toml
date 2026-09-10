@@ -30,23 +30,51 @@ disableKinds = ["taxonomy"]
   # 阅读时间
   readingtime = { enable = false }
 
-# 顶部导航
-[[menu.main]]
-  name = "架构"
-  weight = 10
-  url = "/architecture/"
-[[menu.main]]
-  name = "用户手册"
-  weight = 20
-  url = "/user/"
-[[menu.main]]
-  name = "开发者文档"
-  weight = 30
-  url = "/developer/"
-[[menu.main]]
-  name = "发布记录"
-  weight = 40
-  url = "/releases/"
+# 多语言：中文为默认语言；英文使用同名 .en.md 翻译文件。
+[languages]
+  [languages.zh-cn]
+    title = "Semantic Documentation"
+    languageName = "简体中文"
+    weight = 1
+
+    [[languages.zh-cn.menu.main]]
+      name = "架构"
+      weight = 10
+      url = "/architecture/"
+    [[languages.zh-cn.menu.main]]
+      name = "用户手册"
+      weight = 20
+      url = "/user/"
+    [[languages.zh-cn.menu.main]]
+      name = "开发者文档"
+      weight = 30
+      url = "/developer/"
+    [[languages.zh-cn.menu.main]]
+      name = "发布记录"
+      weight = 40
+      url = "/releases/"
+
+  [languages.en]
+    title = "Semantic Documentation"
+    languageName = "English"
+    weight = 2
+
+    [[languages.en.menu.main]]
+      name = "Architecture"
+      weight = 10
+      url = "/architecture/"
+    [[languages.en.menu.main]]
+      name = "User Guide"
+      weight = 20
+      url = "/user/"
+    [[languages.en.menu.main]]
+      name = "Developer Guide"
+      weight = 30
+      url = "/developer/"
+    [[languages.en.menu.main]]
+      name = "Releases"
+      weight = 40
+      url = "/releases/"
 
 [module]
   [[module.imports]]

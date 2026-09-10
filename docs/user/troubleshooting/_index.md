@@ -5,9 +5,29 @@ weight: 90
 
 本章按系统链路定位常见问题。先确认故障发生在哪一层，再查看该层及相邻层的状态。
 
-> **排错边界**：本章面向运行与使用问题（已部署系统的服务、操作和设备运行）。开发与集成中的问题（环境、构建、扩展开发、联调）见[开发者 FAQ](/developer/faq/)。
+> **排错边界**：本章面向运行与使用问题（已部署系统的服务、操作和设备运行）。开发与集成中的问题（环境、构建、扩展开发、联调）见[开发者 FAQ](../../developer/faq/_index.md)。
 >
-> 升级组件版本前，先阅读[发布记录与迁移指引](/releases/)中的破坏性变化和兼容矩阵。
+> 升级组件版本前，先阅读[发布记录与迁移指引](../../releases/_index.md)中的破坏性变化和兼容矩阵。
+
+## 先看状态，再看日志
+
+推荐先打开底部“过程”页确认当前运行状态，再打开“日志”页展开详细记录。不要一开始就在完整日志中搜索关键字；先确定是模型、工具、Workflow、Robot、Runtime 还是页面连接问题。
+
+![底部过程面板](../../../static/images/user/getting-started/focus-bottom-process.png)
+
+![底部日志面板](../../../static/images/user/getting-started/focus-bottom-logs.png)
+
+## 按层定位
+
+| 现象 | 优先检查 |
+|---|---|
+| 页面无法打开或断开 | Web 地址、Server HTTP/WebSocket、代理和端口转发 |
+| Conversation 无回复或报模型错误 | 系统设置中的模型服务、Token、默认模型和模型日志 |
+| Scene 无法启动 | Runtime Installation、Layout、Runtime 占用和场景日志 |
+| Robot 离线 | Pilot 心跳、AbilityFramework、Ability、Robot Skill 期望 / 实际状态 |
+| Plan 不符合预期 | Conversation、Agent Skill、地图查询和 Plan Proposal revision |
+| Workflow 不推进 | Task 依赖、Agent/Robot 可用性、待处理 Interaction |
+| Robot 动作异常 | Robot Execution Stage、Action、Feedback、Viewer 和传感器 |
 
 ## Web 无法连接 Server
 

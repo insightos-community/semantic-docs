@@ -1,0 +1,18 @@
+{{ $destination := .Destination -}}
+{{ $path := $destination -}}
+{{ $anchor := "" -}}
+{{ if in $path "#" -}}
+  {{ $parts := split $path "#" -}}
+  {{ $path = index $parts 0 -}}
+  {{ $anchor = printf "#%s" (index $parts 1) -}}
+{{ end -}}
+{{ $external := or (hasPrefix $destination "http://") (hasPrefix $destination "https://") (hasPrefix $destination "mailto:") (hasPrefix $destination "tel:") -}}
+{{ if and (not $external) (hasSuffix $path ".md") -}}
+  {{ $ref := strings.TrimSuffix ".md" $path -}}
+  {{ $ref = strings.TrimSuffix ".en" $ref -}}
+  {{ $ref = strings.TrimSuffix "/_index" $ref -}}
+  {{ $ref = strings.TrimSuffix "_index" $ref -}}
+  <a href="{{ relref .Page $ref }}{{ $anchor }}"{{ with .Title }} title="{{ . }}"{{ end }}>{{ .Text | safeHTML }}</a>
+{{- else -}}
+  <a href="{{ $destination | safeURL }}"{{ with .Title }} title="{{ . }}"{{ end }}>{{ .Text | safeHTML }}</a>
+{{- end }}

@@ -1,200 +1,435 @@
 ---
 title: "安装与启动"
 weight: 10
+description: "使用预编译产物快速部署 Semantic，或从源码构建完整开发工作区。"
 ---
 
-本章介绍把 Semantic 跑起来的两种方式：**路径 A** 使用 quick-start 安装器，自动完成依赖安装、代码克隆、构建和服务启动，适合只想体验完整产品流程的用户；**路径 B** 从各仓库源码手动构建，适合需要阅读或修改代码的开发者。两种路径完成后得到的是同一个本地环境：Semantic Server、Semantic Studio（Web 前端）和一套 MuJoCo 仿真 Robot。
+Semantic 有两条安装路径：
 
-> **无需真机**：两条路径都不需要真实机器人和真实模型密钥。全部教程在 MuJoCo 仿真环境中完成，未配置模型密钥时使用内置 `mock` 模型（见[常见问题](#常见问题)）。
+- **路径 A：预编译产物部署**。目标机不克隆 Git、不运行 Go / xmake / npm 构建，直接从发布包初始化一套独立实例，适合快速体验和正式部署。
+- **路径 B：源码构建工作区**。从 quick-start 和组件源码构建 Server、Web、Runtime、Robot Bundle 和 Skill，适合开发、调试和修改代码。
 
-## 选择安装路径
+两条路径最终都会得到 Semantic Server、Semantic Studio、Native MuJoCo Runtime、R1 Pro Bundle 和三个 Robot Skill。普通用户优先选择路径 A。
 
-| | 路径 A：一键体验（推荐） | 路径 B：开发者源码安装 |
-|---|---|---|
-| 适合人群 | 想直接使用产品的用户 | 要参与 Framework/Web 开发的开发者 |
-| 操作方式 | 安装器 TUI 分阶段执行，可断点续跑 | 手动执行各仓构建命令 |
-| 覆盖范围 | 系统依赖、10 个仓库、Runtime 登记、Robot Bundle、Server/Web 启动 | Framework 与 Web 两个仓库的最小可运行环境 |
-| 首次耗时 | 较长（含克隆与构建），后续「日常再开」只需一条命令 | 中等，按需构建 |
+## 路径 A：预编译产物部署
 
-## 路径 A：一键体验（推荐）
+预编译产物部署是独立入口，不要求目标机存在源码工作区。安装器会下载并校验归档、检查系统依赖、初始化配置、创建随机管理员密码、安装 Runtime、启动 Server/Web，并发布 Robot Skill。
 
-安装器是 `quick-start` 仓库中的 `semantic_installer.py`，一个零依赖的终端交互程序（仅需 Python 3 标准库）。它把"从裸 Ubuntu 到 Studio 联调"的完整步骤拆成 8 个阶段，每步有 skip 检查（已满足自动跳过）、实时日志和校验命令，状态持久化后可以随时中断续跑。
+介绍与安装入口：[https://semantic.insightos.cn/](https://semantic.insightos.cn/)
 
-### 前置条件
+### 支持平台
 
-| 项目 | 要求 | 说明 |
-|---|---|---|
-| 操作系统 | Linux（Ubuntu/Debian 系） | 阶段 1 使用 apt 安装系统依赖与 EGL 渲染库 |
-| sudo 权限 | 需要 | 密码在 TUI 内输入，仅存于进程内存、不落盘 |
-| Python 3 | 系统自带即可 | 安装器本身只用标准库；项目 Python 环境由 uv 管理 |
-| Go 1.23+ / Node.js 22 / uv / Git / Git LFS / Make | 可不预装 | 阶段 1 自动安装（国内镜像可配）；已装且满足版本则自动跳过 |
-| 显示环境 | 桌面或 EGL/OSMesa | 渲染后端由 `SEMANTIC_MUJOCO_GL` 控制，默认 `egl`，无头机器可改 `osmesa` |
-| 网络 | 直连或国内镜像 | apt/Go/npm/PyPI/GitHub 代理均可在安装器中配置 |
+当前制品目标：
 
-### 第 1 步：获取 quick-start
+- Linux x86_64；
+- glibc 2.28 或更高版本；
+- 完整 Server + Web + Native MuJoCo + R1 Pro Bundle。
+
+应用程序采用静态 ELF。glibc 门槛来自 uv、Python 和 Wheel 运行栈；满足门槛不等于所有发行版都已完成产品验收。ARM64、Alpine/musl、Windows 和 macOS 的完整运行栈当前不支持。
+
+安装包包含应用二进制和 Python Wheel，不包含操作系统，也不包含独立的系统 Python。目标机缺少 Python 3.13 或 3.10.19 时，uv 仍需要联网下载；系统依赖安装也需要网络。因此这不是完全离线的 OS 安装介质。
+
+### 新安装并开放局域网访问
 
 ```bash
-git clone <quick-start 仓库地址>
-cd quick-start
+curl -fsSL https://semantic.insightos.cn/install.sh | bash -s -- --install-system-deps
 ```
+
+新安装的 Web 默认监听 `0.0.0.0:3000`，同时接受 `127.0.0.1` 和本机局域网 IPv4 地址访问。API、WebSocket 和 Runtime 仍保持本机监听，由 Web 网关统一代理。
+
+可选参数：
+
+```bash
+# 明确开放局域网
+--lan
+
+# 指定 Web 监听地址和端口
+--web-host <本机网卡IP> --web-port 3001
+
+# 只允许本机访问
+--web-host 127.0.0.1
+
+# 非交互确认
+--yes
+
+# 只初始化，不启动 Server/Web
+--no-start
+```
+
+安装器不会修改防火墙或云安全组。只应向可信局域网开放 Web 端口；不要直接公开 API、WebSocket 或 Runtime。公网访问应使用 HTTPS 反向代理、访问控制或 SSH 隧道，HTTP 本身不加密。
+
+### 更新已有实例的管理工具和局域网配置
+
+已经安装的实例，包括 `.4` 版本，不需要重新部署数据库和运行包。可以只更新管理工具、监听配置和桌面入口：
+
+```bash
+curl -fsSL https://semantic.insightos.cn/install.sh | bash -s -- \
+  --configure-existing --dir "$HOME/.local/share/semantic" --lan --desktop-shortcut
+```
+
+这个模式仍会下载并校验新版本完整归档，但只安装：
+
+- `bin/semantic-manager`；
+- `semanticctl`；
+- 监听配置；
+- 桌面快捷入口。
+
+它会保留业务版本、原始发布包、数据库、密码和运行环境，并把旧 `install.json` 保存到 `configs/`。需要变更监听时只重启 Web，不重启正在运行的 Server。已有实例不传网络参数时会保留原监听配置；切换到“本机 + 局域网”需要显式传 `--lan`。
+
+### 安装过程会看到什么
+
+安装器会显示真实下载字节进度、SHA-256 校验、解包阶段、任务清单和各阶段耗时。交互终端使用单页任务表原位刷新；失败后保留任务状态和日志位置。
+
+密码只向 `/dev/tty` 输出，不写入 stdout、stderr 管道或安装日志。没有控制终端时，安装器会提示密码文件位置。分享终端截图前应先遮挡密码。
+
+桌面环境下可以创建快捷入口：
+
+- `--desktop-shortcut`：显式创建；
+- `--no-desktop-shortcut`：跳过。
+
+快捷方式只打开本机 Web，不携带账号密码，也不会自动启动服务。GNOME 等环境可能需要右键“允许启动”。
+
+### 安装后的目录结构
+
+默认安装目录是 `$HOME/.local/share/semantic`：
+
+```text
+<install-dir>/
+├── releases/<version>/   当前版本产物和重建的 Python 环境
+├── current -> releases/<version>
+├── bin/semanticctl       本实例管理入口
+├── configs/              Server、Agent、Skill 配置和 secrets.json
+├── data/                 SQLite 数据库和业务数据
+├── runtimes.d/           已登记的 Native MuJoCo Runtime
+├── runtime-packs/        解包后的正式 Runtime Pack
+├── runtime-envs/         目标机独立 MuJoCo venv
+├── content/              场景目录
+├── python/               uv 按需下载的 Python
+├── run/                  PID、身份和安装锁
+└── logs/                 安装、Server 和 Web 日志
+```
+
+初始化流程依次执行：
+
+1. SHA-256 校验；
+2. 平台和系统依赖检查；
+3. 提取到安装目录；
+4. 重建 Robot Python 环境并执行导入检查；
+5. `semantic init`；
+6. 创建随机管理员密码；
+7. 安装正式 Runtime Pack 并执行隔离场景 smoke；
+8. 检查 Server/Web 健康状态；
+9. 登录并发布三个 Robot Skill。
+
+安装完成后，访问：
+
+```text
+http://127.0.0.1:3000
+http://<局域网IP>:3000
+```
+
+初始用户名是 `admin`。随机密码保存在：
+
+```text
+<install-dir>/configs/secrets.json
+```
+
+该文件权限为 `0600`。同版本重跑会保留密码、配置和数据库。
+
+### 日常启动、状态和停止
+
+安装完成页会给出环境变量和启停指引。安装器不会擅自修改 shell 启动文件：
+
+```bash
+export SEMANTIC_HOME="$HOME/.local/share/semantic"
+export PATH="$SEMANTIC_HOME/bin:$PATH"
+
+semanticctl start
+semanticctl status
+semanticctl stop
+semanticctl welcome
+```
+
+如需持久生效，可以把前两行加入 `~/.bashrc` 或 `~/.zshrc`。当前不会配置开机自启动。
+
+也可以直接使用完整路径：
+
+```bash
+"$HOME/.local/share/semantic/bin/semanticctl" status
+"$HOME/.local/share/semantic/bin/semanticctl" start
+"$HOME/.local/share/semantic/bin/semanticctl" doctor
+"$HOME/.local/share/semantic/bin/semanticctl" logs
+"$HOME/.local/share/semantic/bin/semanticctl" stop
+```
+
+停止 Server/Web 前，应先在 Studio 中安全停止场景和 Robot。`semanticctl` 使用 PID、进程启动时间和实例路径校验进程身份，避免因 PID 重用误操作其他进程。
+
+### 使用本地发布包安装
+
+如果已经有发布包，可以不通过 HTTPS 入口，直接本地安装：
+
+```bash
+bash artifacts/install.sh \
+  --package artifacts/releases/<version>/linux-x86_64/semantic-<version>-linux-x86_64.tar.gz \
+  --dir "$HOME/.local/share/semantic" \
+  --yes
+```
+
+归档旁边的 `.sha256` 文件必须保留，也可以显式传：
+
+```bash
+--sha256 <HASH>
+```
+
+默认端口依次是：
+
+| 服务 | 默认端口 |
+|---|---:|
+| Server HTTP | 8080 |
+| Server WebSocket | 8081 |
+| Web | 3000 |
+| MuJoCo Runtime | 8090 |
+
+可以使用 `--http-port`、`--ws-port`、`--web-port`、`--runtime-port` 避开已有服务。安装器不会自动停止其他进程来腾出端口。
+
+### 使用自己的 HTTPS 分发地址
+
+把 `install.sh`、`channels/` 和 `releases/` 按相同相对结构放到可信 HTTPS 静态站点后，可以执行：
+
+```bash
+curl -fsSL https://YOUR-HOST/semantic/install.sh | \
+  bash -s -- --base-url https://YOUR-HOST/semantic --yes
+```
+
+固定版本时添加：
+
+```bash
+--version <version>
+```
+
+也可以提前设置 `SEMANTIC_DOWNLOAD_BASE`，省略 `--base-url`。本地 HTTP 测试需要显式传 `--allow-http`；默认会拒绝 HTTP 和 HTTPS 降级重定向。
+
+SHA-256 能防止文件损坏，但不能替代签名。生产环境应确保 HTTPS 站点和引导脚本可信；高信任环境可以先下载并审阅入口，再使用独立可信渠道提供的 `--sha256` 固定制品。
+
+### 卸载
+
+卸载前先在 Studio 中安全停止场景和 Robot。新版 `install.sh` 不需要重新下载发布包即可卸载：
+
+```bash
+# 只显示计划，不停止或删除
+bash artifacts/install.sh --uninstall --dir "$HOME/.local/share/semantic" --dry-run
+
+# 保留用户配置、数据库和日志
+bash artifacts/install.sh --uninstall --dir "$HOME/.local/share/semantic"
+
+# 永久删除整个实例，包括用户数据
+bash artifacts/install.sh --uninstall --dir "$HOME/.local/share/semantic" --purge --yes
+
+# 使用在线入口卸载
+curl -fsSL https://semantic.insightos.cn/install.sh | \
+  bash -s -- --uninstall --dir "$HOME/.local/share/semantic" --yes
+```
+
+默认卸载会删除 `releases/`、`python/`、`runtime-envs/`、`runtime-packs/`、`bin/` 和 `current` 链接，保留 `configs/`、`data/`、`logs/`、`content/`、`runtimes.d/`、Robot 实例数据和其他非程序目录。保留数据模式不是备份；重要数据应另行备份。
+
+`--purge` 会永久删除不可由脚本恢复的数据。每次卸载，包括失败和 dry-run，都会在系统临时目录生成权限为 `0600` 的 `semantic-uninstall-*.log`。
+
+## 路径 B：源码构建工作区
+
+源码构建适合需要修改 Server、Web、Simulation、Robot Skill、Ability 或部署逻辑的开发者。quick-start 仓库协调多个组件仓库，本身不是 Server。
+
+公开源码工作区入口：
+
+```bash
+git clone https://github.com/insightos-community/quick-start.git
+cd quick-start
+python3 semantic_installer.py --list
+```
+
+部署基线面向 Linux x86_64，并已在 Ubuntu 24.04 验证。下载模型后仍需要完成源码构建、Bundle 激活和 Skill 发布，并不是下载模型即完成部署。安装系统依赖可能需要 sudo。
 
 安装器按工作区版本清单中的远端与 revision 准备其余仓库；在 TUI 中按 `e` 可配置工作根目录 `SEMANTIC`、管理员密码、服务地址与镜像等。开始前检查所选清单是否适合当前托管组织。公开仓库使用标准 Git 认证；不要把个人凭据写入清单或提交到仓库。
 
-### 第 2 步：运行安装器
+### 源码构建要求
+
+需要：
+
+- Linux；
+- Git 和 Git LFS；
+- 支持 curses 的 Python；
+- Go 1.23+；
+- Node.js 22；
+- uv；
+- xmake；
+- Ubuntu/apt 系统依赖环境。
+
+原生 MuJoCo 和 Robot Worker 使用独立的 Python 3.10 / 3.13 环境。
+
+场景资产通过 Git LFS 拉取。第三方 Wheel 优先复用已校验的本地缓存，再通过 `UV_DEFAULT_INDEX` 指定的包源下载。`RUNTIME_WHEEL_SOURCE` 可设置为：
+
+- `auto`：默认策略；
+- `lfs`：跳过包源；
+- `offline`：仅检查运行时缓存，场景资产仍走 LFS。
+
+已修改的缓存文件会保留并报错。经过特殊处理的 TinyXML2 / urdfdom Wheel 仍使用 LFS。
+
+### 运行源码安装器
 
 ```bash
-python3 semantic_installer.py            # TUI 模式（推荐）
-python3 semantic_installer.py --list     # 只列出全部阶段与步骤，不执行
-python3 semantic_installer.py --run-all  # 无头模式：顺序执行全部阶段
-python3 semantic_installer.py --stage 1 --stage 2   # 无头模式：执行指定阶段
+python3 semantic_installer.py --list
+python3 semantic_installer.py
 ```
 
-TUI 左侧是阶段/步骤树，中间是实时日志。常用按键：
+开始前确认工作目录和仓库地址。版本由 `repo-versions.json` 固定，安装器会按清单切换 revision。个人设置、凭据和构建输出不要提交到版本库。
 
-| 按键 | 作用 |
+安装过程：
+
+| 顺序 | 工作内容 | 产物 |
+|---|---|---|
+| 1–2 | 配置工具、克隆仓库、拉取所需 LFS 资产 | 源码工作区与资产 |
+| 3 | 编译 Server / Pilot，初始化配置 | `semantic-framework/.output/` |
+| 4 | 准备并登记 Native MuJoCo | Runtime 登记与独立环境 |
+| 5 | 编译 AbilityFramework、Python Wheel，组装并激活 Robot Bundle | Runtime 种子、Bundle 与目录 |
+| 6 | 启动 Server / Web，发布 Robot Skill | Studio 与版本化 Skill 注册表 |
+| 7 | 在 Studio 配置模型、Project、场景和 Robot | 可执行任务环境 |
+
+**Bundle 激活与 Skill 发布是两个独立步骤。** 仅编译 Bundle 不会安装 Robot 请求的 Skill。
+
+### 源码工作区结构
+
+| 目录 | 职责 |
 |---|---|
-| `a` | 从阶段 1 连续执行所有步骤（尊重 skip 检查） |
-| `Enter` | 执行选中的阶段或单步 |
-| `e` | 设置环境变量，保存并生成 `semantic-env.sh` |
-| `g` | 原托管环境凭据助手；公开仓库使用标准 Git 认证 |
-| `L` | 查看选中服务步骤的日志尾部 |
-| `x` | 停止本工具启动的所有后台服务 |
-| `?` | 帮助，含已知坑点摘要 |
-| `q` | 退出（会询问是否停止后台服务） |
+| `semantic-framework/` | Server、Pilot、管理 CLI |
+| `semantic-web/` · `semantic-docs/` | Studio 前端与文档站 |
+| `semantic-robotsdk/robot-sdk/` | 机器人统一契约与适配层 |
+| `semantic-ability/r1pro-ability/` | R1 Pro 语义能力 |
+| `semantic-skill/robot-skill/` | Skill Worker SDK 与任务级 Skill |
+| `semantic-simulation/mujoco-runtime/` · `semantic-scene/mujoco-asset/` | 物理仿真与独立治理的资产 |
+| `semantic-robot-deployment/` | Bundle 打包与单 Robot 进程管理 |
+| `semantic-ability/ability-runtime/` | 构建输入与离线依赖缓存 |
+| `ability-framework/{abilityframework,ability-py-sdk,ability-scaffold}/` | Ability 宿主、Python SDK 与工程生成工具 |
 
-<!-- TODO(实跑): 在干净的 Ubuntu 上完整执行一遍路径 A（TUI 与 --run-all 各一次），记录各阶段真实输出与耗时；本文仅实跑了 --list 与 --help。 -->
+各组件均有中英文 README。仓库名称不一定等于本地目录名；跨仓构建时应保留上述布局。
 
-### 安装器做了什么
+### 版本和日常使用
 
-阶段划分与执行内容（与 `--list` 输出一致）：
-
-| 阶段 | 内容 |
-|---|---|
-| 1 系统依赖 | apt 源、基础工具、Go、Node.js、uv + Python 3.13、EGL 渲染库、镜像配置、版本自检 |
-| 2 拉代码与资产 | 克隆 10 个仓库到 `$SEMANTIC` 根目录、切换联调分支、`git lfs pull`、目录核对 |
-| 3 构建 Server | 写入 framework `.env`（含管理员密码）、`make build`、`make init`、产物核对 |
-| 4 登记 MuJoCo Runtime | `uv sync` 建立运行时环境，`semantic runtime install` 登记 |
-| 5 Robot 执行栈 | scaffold 环境、Wheel 缓存检查、构建并激活 r1pro-mujoco Robot Bundle、改 `.output` 配置启用受管 Robot |
-| 6 启动 | 后台启动 Server（`make run`，自动注入 `TMPDIR`）与 Web（`npm ci` + `.env` + `npm run dev`），登录并发布三个 Robot Skill |
-| 7 Studio 手动联调 | 8 条手动检查清单，完成后按 `m` 标记 |
-| 8 日常再开 | 先停本工作区已在跑的 Server/Web，再后台拉起 |
-
-两点目录约定：
-
-- `semantic-deployment` 远端仓在本地必须命名为 `semantic-robot-deployment`（安装器已处理）；
-- 阶段 6 启动 Server 时自动注入 `TMPDIR=$SEMANTIC/semantic-framework/.output/tmp`，避免 AbilityFramework 打包时 `/tmp` 与 `$HOME` 跨设备 `rename` 报 `EXDEV`。
-
-生成的文件都在 `quick-start/` 目录：`installer-settings.json`（环境变量）、`installer-status.json`（步骤状态，重开程序续跑）、`semantic-env.sh`（可 `source` 到任意终端）。Server/Web 后台日志在 `$SEMANTIC/.tui-logs/{server,web}.log`。
-
-### 启动后访问
-
-阶段 6 完成后：
-
-| 服务 | 地址 |
-|---|---|
-| Semantic Studio（浏览器入口） | `http://127.0.0.1:3000` |
-| Server HTTP API | `http://127.0.0.1:8080` |
-| Server WebSocket | `ws://127.0.0.1:8081` |
-| MuJoCo Runtime（阶段 4 登记，按需启动） | `http://127.0.0.1:8090` |
-
-使用 admin 账号登录 Studio 后，即可继续[第一个 Project](/user/getting-started/first-project/)。
-
-### 首次登录账号
-
-首次启动时 Server 自动创建种子用户 **`admin`**，初始密码取 framework `.env` 中的 `SEMANTIC_ADMIN_PASSWORD`（安装器阶段 3.1 写入；TUI 中按 `e` 可修改）。若该变量未设置，使用默认初始密码 `admin123`，且启动日志会输出 WARN 提示尽快修改（源码：`semantic-framework/internal/server/auth/service.go` 的 `SeedAdmin`）。
-
-当前代码没有修改密码的端点：如果需要在启动后更换 admin 密码，执行 `semantic init --reset-data` 备份并重建数据目录，再以新的 `SEMANTIC_ADMIN_PASSWORD` 启动（源码：`semantic-framework/cmd/semantic/init.go`）。
-
-### 日常再开与停止
-
-再次使用时运行安装器并执行阶段 8「日常再开」（自动先停旧进程再拉起），或在 TUI 中按 `x` 停止全部后台服务。不用安装器时，也可以直接 `source semantic-env.sh` 后进入各仓手动启动（同路径 B）。
-
-## 路径 B：开发者源码安装
-
-这条路径手动构建 Framework 与 Web，适合要改代码的开发者；完整的多仓工作区准备（跨仓变量、Git LFS、Runtime 安装）见[第 1 章：工作区](/developer/quickstart/chapter_01_environment/)。此处只保留最小可运行序列。
-
-### 环境要求
-
-- Go 1.23
-- Node.js 22
-- Python 3.11 或更高版本
-- Git、Make 和支持现代浏览器的桌面环境
-
-机器人仿真还需要相应 Runtime。原生 MuJoCo 场景使用 MuJoCo Runtime 和配套 Scene Package。
-
-### 启动 Semantic Server
+发布和镜像同步基于已验证的维护版本，不跟随上游或默认分支的领先版本。使用 `repo-versions.json` 固定的 Tag 和提交。
 
 ```bash
-cd /path/to/semantic-framework
-cp .env.example .env          # 按需设置 SEMANTIC_ADMIN_PASSWORD
-make build
-make run
+python3 repo_versions.py --env github.env --show-config
+python3 -m unittest discover -s tests
 ```
 
-`make build` 生成 `semantic-server`、`semantic-pilot`、`semantic` 三个二进制到 `.output/bin/`；`make run` 会先执行 `make init`，把内置模板安装为 `.output/configs/semantic-server.yaml` 运行副本（已有文件保持不变），再用该副本启动（源码：`semantic-framework/Makefile`）。运行配置、SQLite、日志都在 `.output/`，不要把源码模板目录当作运行状态。
+`repo_versions.py` 用于源码版本清单，不是安装器参数。TUI 中：
 
-默认服务地址：
+- `e`：配置；
+- `Enter`：执行步骤；
+- `L`：查看服务日志；
+- `x`：停止托管服务。
 
-- HTTP API：`http://127.0.0.1:8080`
-- WebSocket：`ws://127.0.0.1:8081`
+预编译安装实例日常使用 `semanticctl start|stop|status|doctor`。
 
-使用以下命令检查运行环境和日志：
+## 发布包维护者补充
+
+以下内容面向负责生成预编译产物的维护者，普通用户可以跳过。
+
+发布包目录包含：
+
+```text
+artifacts/
+├── install.sh
+├── site/
+├── build_release.py
+├── build_native.py
+├── smoke_release.py
+├── smoke_uninstall.py
+├── runtime/installer.py
+├── runtime/uninstall.py
+├── gateway/main.go
+├── channels/stable.json
+└── releases/<version>/linux-x86_64/
+```
+
+归档内部按组件存放：
+
+```text
+bin/                semantic-server / semantic / semantic-pilot / Web gateway / uv
+web/                Vite production 静态文件
+robot-bundles/      AbilityFramework、Pilot、七类 Ability ZIP、Wheel、部署模板
+robot-skills/       grasp-object / semantic-navigation / place-object 发布 ZIP
+runtime-packs/      Native MuJoCo 正式 Runtime Pack
+assets/mujoco/      模型、网格、场景和资产目录
+defaults/           干净 Server 配置
+release.json        组件版本及来源提交
+native-linkage.json 静态链接检查
+files.json          每个产物的 SHA256
+installer.py        初始化逻辑
+```
+
+发布包不会提取 `.env`、用户数据库、Project/Task/会话、Pilot 凭据、运行日志、`.git`、`node_modules`、现有 `.venv` 或指向构建机的 Python 符号链接。
+
+构建发布包前先完成源码构建，然后执行：
 
 ```bash
-make doctor
-make logs
+python -B artifacts/build_native.py
+uv run --no-project --with PyYAML python artifacts/build_release.py \
+  --version <version>
 ```
 
-Server 使用运行副本配置连接数据库、模型提供方、Runtime Installation 和 Robot Skill Registry。未配置模型密钥时仅内置 `mock` 模型可用，服务不阻塞启动；真实模型密钥通过 Studio 系统设置或 `.env` 提供，日志只记录调用状态与用量。
+构建器会检查真实 LFS 文件、Wheel ZIP、三个 Skill 的精确版本和 Bundle 模板一致性。相同版本目录拒绝覆盖；重建应使用新版本。
 
-### 启动 Semantic Web
-
-在另一个终端进入 Web 仓库：
+英文安装入口是 `artifacts/install-en.sh`：
 
 ```bash
-cd /path/to/semantic-web
-npm install
-VITE_SERVER_HTTP=http://127.0.0.1:8080 \
-VITE_SERVER_WS=ws://127.0.0.1:8081 \
-npm run dev
+curl -fsSL https://semantic.insightos.cn/install-en.sh | bash -s -- --install-system-deps
 ```
 
-Vite 输出浏览器访问地址（dev 端口固定为 `3000`）。进入页面后，Web 会通过 HTTP 获取初始状态，并通过 WebSocket 接收 Conversation、Workflow、Robot 和 Execution 更新。
+## 验证安装
 
-注意 `VITE_SERVER_WS` 使用根地址 `ws://127.0.0.1:8081`（前端自行拼接路径）；Server 配置里的 `server_websocket_url: ws://127.0.0.1:8081/ws/pilot` 是 Pilot 专用地址，两者不能混用。
+安装完成后，按以下顺序检查：
 
-若系统提示 inotify watcher 数量不足，先关闭遗留的开发服务器。Linux 主机也可以提高当前用户的 watcher 上限，再重新运行 `npm run dev`。
+1. `semanticctl status` 显示 Server/Web 正常；
+2. 浏览器能打开 Studio 登录页；
+3. `admin` 能使用 `configs/secrets.json` 中的密码登录；
+4. 系统设置中可以查看模型服务和 Runtime；
+5. 设备中心能看到 Robot 和 Pilot；
+6. 最佳实践中的 R1 Pro 拆码垛场景可以添加并启动。
 
-## 验证服务
+维护者验证发布包时，还应执行：
 
-两种路径完成后统一检查：
+```bash
+python -B -m unittest discover -s tests -q
+go test artifacts/gateway/main.go artifacts/gateway/main_test.go
+bash -n artifacts/install.sh
+python -B artifacts/smoke_release.py \
+  --package artifacts/releases/<version>/linux-x86_64/semantic-<version>-linux-x86_64.tar.gz \
+  --port-base 28180
+```
 
-1. Web 能列出 Project。
-2. 全局设备中心可以打开。
-3. 新建 Conversation 后可以发送消息。
-4. Server 日志中没有数据库迁移、模型配置或 WebSocket 连接错误。
-
-<!-- TODO(实跑): 按上述清单在路径 A 与路径 B 各实测一轮，记录 Studio 与 curl 的真实表现。 -->
+“安装完成”不能替代 Robot 真正就绪、物理抓取和任务执行的产品验收。
 
 ## 常见问题
 
-**端口被占用（8080/8081/3000/8090）**
-Server 端口在运行副本 `.output/configs/semantic-server.yaml` 的 `server.http_addr`/`server.ws_addr` 修改，也可用环境变量覆盖（如 `SEMANTIC_SERVER_HTTP_ADDR`）；改完重启 Server。Web dev 端口固定为 3000。MuJoCo Runtime 的 8090 处理方式见[开发者 FAQ](/developer/faq/)「8090 端口被占用」条目。
+**Wheel 无效或不是二进制产物**
 
-**首次登录失败（AUTH_INVALID_CREDENTIALS）**
-确认用户名是 `admin`、密码是 `.env` 中 `SEMANTIC_ADMIN_PASSWORD` 的值。若启动后才补设该变量，种子用户已经用默认密码（或当时值）创建，需要 `semantic init --reset-data` 重建后再启动。更多场景见[运行维护的首次登录常见问题](/user/operations/runtime-operations/#首次登录常见问题)。
+重跑源码构建中的 Wheel 构建和复制步骤。Git LFS 指针文件不是 Wheel 本身。
 
-**`npm run dev` 报 inotify watcher 耗尽**
-关闭多余的 Vite、编辑器或测试 watcher；需要长期并行时提高 `fs.inotify.max_user_watches` 与 `fs.inotify.max_user_instances`。详见[问题排查](/user/troubleshooting/)与[开发者 FAQ](/developer/faq/)对应条目。
+**sudo 密码和 Web 管理员密码是同一个吗**
+
+不是。sudo 使用 Linux 用户登录密码；Web 管理员密码保存在 Semantic 实例配置中。TUI 输入 sudo 有问题时，按 `e` 设置 `SUDO_AUTH=terminal` 后重跑。
+
+**Robot 离线或缺 Skill**
+
+检查 Runtime 登记、激活的 Bundle 和已发布 Skill 的精确版本。Bundle 激活不等于 Skill 已发布。
+
+**步骤失败**
+
+安装器会停止队列。重跑前查看 `.tui-logs/` 或安装目录下 `logs/` 的第一条明确错误。
+
+**模型密钥如何配置**
+
+安装完成后默认使用 mock 模型。真实模型服务和 Token 需要在 Studio 系统设置中配置，密码和模型 Key 只保存在本地，不要向不可信网络开放开发服务。
 
 ## 下一步
 
-继续阅读[第一个 Project](/user/getting-started/first-project/)，完成一条从对话到 Robot 执行的产品流程。
-
-## 命令与事实来源
-
-- 安装器行为、按键、阶段与生成文件：`quick-start/semantic-installer-README.md`、`python3 semantic_installer.py --list` / `--help`（实测）、`quick-start/NOTES.md`；
-- 种子账号与 token：`semantic-framework/internal/server/auth/service.go`、`internal/server/http/router.go`；
-- 端口：`semantic-framework/configs/semantic-server.yaml`（8080/8081）、`semantic-web/vite.config.js`（3000）、`semantic-simulation/mujoco-runtime/README.md`（8090）；
-- 构建与初始化：`semantic-framework/Makefile`、`semantic-framework/.env.example`；
-- mock 模型：`semantic-framework/configs/semantic-server.yaml` 模板注释。
+安装并登录成功后，继续阅读[最佳实践：从 Project 到规划](best-practice.md)，按截图完成第一条完整产品流程。若需要理解 Studio 页面结构，继续阅读[Project 与 Semantic Studio](../workspace/project-and-studio.md)。
