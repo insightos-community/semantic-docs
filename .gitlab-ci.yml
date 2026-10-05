@@ -1,0 +1,132 @@
+# semantic-docs CI：普通分支验证文档，规范版本标签额外发布静态站点制品。
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_TAG =~ /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$/'
+    - when: never
+
+stages: [validate, security, build, package, publish, release]
+
+variables:
+  CHANGELOG_FILE: "CHANGELOG.md"
+  PACKAGE_REGISTRY_NAME: "$CI_PROJECT_PATH_SLUG"
+  # 国内 Runner 访问 Docker Hub 受限，统一经 DaoCloud 代理拉取镜像。
+  DOCKER_HUB_PROXY: "docker.m.daocloud.io"
+
+.verify_rules:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_TAG =~ /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$/'
+    - when: never
+
+validate_release:
+  stage: validate
+  image: ${DOCKER_HUB_PROXY}/library/node:22
+  interruptible: false
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$/'
+    - when: never
+  script:
+    - bash ci/validate-release.sh
+
+gitleaks:
+  stage: security
+  image:
+    name: ${DOCKER_HUB_PROXY}/zricethezav/gitleaks:v8.24.2
+    entrypoint: [""]
+  extends: .verify_rules
+  script:
+    - gitleaks detect --source . --config .gitleaks.toml --verbose
+
+build_docs:
+  stage: build
+  image: ${DOCKER_HUB_PROXY}/library/node:22
+  extends: .verify_rules
+  variables:
+    GITHUB_PROXY: "https://ghfast.top/"
+  script:
+    - npm ci
+    - npm run docs:build
+  artifacts:
+    paths:
+      - public/
+    expire_in: 7 days
+
+package_docs:
+  stage: package
+  image: ${DOCKER_HUB_PROXY}/library/alpine:3.22
+  interruptible: false
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$/'
+    - when: never
+  needs:
+    - job: validate_release
+    - job: build_docs
+      artifacts: true
+  script:
+    - PACKAGE_FILE="$CI_PROJECT_PATH_SLUG-$CI_COMMIT_TAG.tar.gz"
+    - tar -czf "$PACKAGE_FILE" public README.md CHANGELOG.md
+    - echo "PACKAGE_FILE=$PACKAGE_FILE" > package.env
+  artifacts:
+    paths:
+      - "*.tar.gz"
+    reports:
+      dotenv: package.env
+    expire_in: 30 days
+
+publish_package:
+  stage: publish
+  image: ${DOCKER_HUB_PROXY}/library/alpine:3.22
+  interruptible: false
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$/'
+    - when: never
+  needs:
+    - job: package_docs
+      artifacts: true
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - BASE_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/$PACKAGE_REGISTRY_NAME/$CI_COMMIT_TAG"
+    - curl --location --fail-with-body --header "JOB-TOKEN:$CI_JOB_TOKEN" --upload-file "$PACKAGE_FILE" "$BASE_URL/$PACKAGE_FILE"
+    - echo "PACKAGE_FILE=$PACKAGE_FILE" > publish.env
+    - echo "RELEASE_PACKAGE_URL=$BASE_URL/$PACKAGE_FILE" >> publish.env
+  artifacts:
+    reports:
+      dotenv: publish.env
+    expire_in: 30 days
+
+create_release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:v0.24.0
+  interruptible: false
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-(alpha|beta|rc)\.(0|[1-9][0-9]*)$/'
+      variables:
+        RELEASE_LABEL: "预发布"
+    - if: '$CI_COMMIT_TAG =~ /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/'
+      variables:
+        RELEASE_LABEL: "正式版"
+    - when: never
+  needs:
+    - job: publish_package
+      artifacts: true
+  script:
+    - test -s "$CHANGELOG_FILE"
+    - test -n "$PACKAGE_FILE"
+    - test -n "$RELEASE_PACKAGE_URL"
+  release:
+    tag_name: '$CI_COMMIT_TAG'
+    name: 'Release $CI_COMMIT_TAG（$RELEASE_LABEL）'
+    description: './CHANGELOG.md'
+    assets:
+      links:
+        - name: '$PACKAGE_FILE'
+          url: '$RELEASE_PACKAGE_URL'
+          link_type: package
