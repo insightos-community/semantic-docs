@@ -16,7 +16,7 @@ weight: 30
 
 外部贡献者从 `main`（或默认分支）fork 仓库，创建主题分支后提交 PR/MR：
 
-- 文档仓库遵循根目录 [CONTRIBUTING.md](https://github.com/insightos-community/semantic-docs/blob/main/CONTRIBUTING.md)；
+- 文档仓库遵循根目录 [CONTRIBUTING.md](https://github.com/insightos-community/semantic-docs/blob/main/CONTRIBUTING.zh-CN.md)；
 - 首次提交建议从 `docs` 类型的小改动开始，熟悉写作规则和构建验证；
 - PR/MR 由维护者评审，评审意见直接落实到代码与文档。
 

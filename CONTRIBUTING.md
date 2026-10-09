@@ -1,50 +1,52 @@
-# 贡献指南
+# Contributing Guide
 
-感谢参与 Semantic 文档建设。本文面向外部与内部贡献者，说明环境准备、写作规则和提交流程。
+[English](CONTRIBUTING.md) | [简体中文](CONTRIBUTING.zh-CN.md)
 
-## 开始之前
+Thank you for helping build the Semantic documentation. This document is for both external and internal contributors, and covers environment setup, writing rules, and the submission workflow.
 
-1. 为修改目标建立 Issue（缺陷、内容缺口或新页面建议），描述读者、目标和验收方式；
-2. 大幅结构调整（移动/删除页面）先在 Issue 中对齐方案，避免返工；
-3. 涉及其他仓库行为的内容修改，先确认对应仓库的现状，文档以代码为事实来源。
+## Before You Start
 
-## 本地开发
+1. Open an Issue for the change you intend to make (a defect, a content gap, or a proposal for a new page), describing the audience, the goal, and how acceptance will be verified;
+2. For large structural changes (moving/removing pages), align on the plan in an Issue first to avoid rework;
+3. For content that concerns the behavior of other repositories, confirm the current state of the corresponding repository first — documentation takes the code as its source of truth.
+
+## Local Development
 
 ```bash
-npm ci          # 自动安装 pinned Hugo，Docsy 已 vendor
+npm ci          # automatically installs the pinned Hugo; Docsy is vendored
 npm run docs:dev
 ```
 
-要求 Node.js 22+。构建不依赖外网。
+Requires Node.js 22+. The build does not depend on external network access.
 
-## 写作规则
+## Writing Rules
 
-1. **先跑通再成文**：所有命令、路径、端口、版本号必须在当月内于本机实际执行通过后才可提交；文中保留核对过的源码位置。
-2. **每条命令跟预期输出**：贴真实输出的关键片段；未能实跑的内容用 `<!-- TODO(实跑): ... -->` 标注，不得写成事实。
-3. **同一事实只有一个来源**：命令矩阵在 `reference/build/`、协议在 `reference/api/`、扩展决策表在 `core-modules/`；教程与其他页面只引用不复制。
-4. **UI 操作要有依据**：截图或精确入口描述（哪个页面、哪个按钮）。
-5. **中文技术写作**：术语首次出现给英文；命令块标注语言；不使用"我们"叙述。
-6. 页面移动必须配置 `aliases`，保证旧链接不断。
+1. **Run it before you write it**: every command, path, port, and version number must have actually been executed successfully on your own machine within the current month before it may be submitted; keep the verified source-code locations in the text.
+2. **Every command comes with its expected output**: paste the key excerpts of real output; content that could not be executed must be marked with `<!-- TODO(实跑): ... -->` and must not be stated as fact.
+3. **A single source of truth for each fact**: the command matrix lives in `reference/build/`, protocols in `reference/api/`, and the extension decision table in `core-modules/`; tutorials and other pages reference these rather than duplicating them.
+4. **UI operations must be substantiated**: with a screenshot or a precise description of the entry point (which page, which button).
+5. **Chinese technical writing**: give the English term at a term's first occurrence; annotate code blocks with their language; do not narrate in the first-person "we".
+6. Page moves must configure `aliases` so that old links keep working.
 
-## 提交
+## Commits
 
-- 一个提交聚焦一个可验证职责，标题使用约定式格式：
+- Each commit focuses on one verifiable responsibility, with a title in conventional format:
 
   ```text
   docs(user): 重写仿真环境使用手册
   fix(developer): 修正 cookbook 中 robot skill 测试路径
   ```
 
-- 提交正文说明：修改动机、关键变化、验证方式。
-- 提交前执行 `npm run docs:build`，确保零告警、无断链。
+- The commit body explains: the motivation for the change, the key changes, and how it was verified.
+- Run `npm run docs:build` before committing to ensure zero warnings and no broken links.
 
 ## Pull Request / Merge Request
 
-- 关联 Issue，描述读者、改动范围和验证结果；
-- 界面相关修改附截图；涉及 Robot 行为的内容附执行记录；
-- 评审意见直接落实到代码与文档；长期有效的设计结论写入架构或开发者文档。
+- Link the Issue, and describe the audience, the scope of the change, and the verification results;
+- Attach screenshots for UI-related changes; attach execution logs for content involving Robot behavior;
+- Address review comments directly in the code and docs; write design conclusions with long-term validity into the architecture or developer documentation.
 
-## 报告问题
+## Reporting Issues
 
-- 文档内容错误：Issue 模板选择 docs-feedback，附页面 URL 与期望表述；
-- 安全漏洞：不要公开提交，见 [SECURITY.md](./SECURITY.md)。
+- Documentation content errors: choose the docs-feedback Issue template, and attach the page URL and the expected wording;
+- Security vulnerabilities: do not file them publicly — see [SECURITY.md](./SECURITY.md).

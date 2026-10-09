@@ -24,6 +24,6 @@ npm run docs:build
 
 ## 贡献
 
-见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+见 [CONTRIBUTING.md](CONTRIBUTING.zh-CN.md)。
 
-安全问题见 [SECURITY.md](SECURITY.md)。
+安全问题见 [SECURITY.md](SECURITY.zh-CN.md)。

@@ -1,26 +1,28 @@
-# 安全政策
+# Security Policy
 
-## 支持的版本
+[English](SECURITY.md) | [简体中文](SECURITY.zh-CN.md)
 
-| 分支 | 支持状态 |
+## Supported Versions
+
+| Branch | Support status |
 |---|---|
-| main | ✅ 安全修复在此进行 |
-| 其他已发布 tag | 以最新 release 为准，见[发布记录](./docs/releases/_index.md) |
+| main | ✅ Security fixes land here |
+| Other published tags | Governed by the latest release — see the [release notes](./docs/releases/_index.md) |
 
-## 报告漏洞
+## Reporting a Vulnerability
 
-**请勿通过公开 Issue 报告安全漏洞。**
+**Please do not report security vulnerabilities through public Issues.**
 
-请通过项目维护者公布的安全联系渠道私下报告（开源后将在此处提供专用邮箱）。报告时请尽量包含：
+Please report privately through the security contact channel published by the project maintainers (a dedicated email address will be provided here once the project is open-sourced). When reporting, please include as much of the following as possible:
 
-- 受影响的页面或组件（文档仓库 / Framework / Web / Robot 组件）；
-- 问题的可复现步骤或概念验证；
-- 影响评估与建议修复方式。
+- The affected pages or components (docs repository / Framework / Web / Robot components);
+- Reproduction steps or a proof of concept for the issue;
+- An impact assessment and a suggested fix.
 
-## 响应承诺
+## Response Commitment
 
-- 48 小时内确认收到；
-- 7 天内给出初步评估；
-- 修复发布前对报告内容保密，并在发布记录中致谢报告者（如报告者同意）。
+- Acknowledgment of receipt within 48 hours;
+- A preliminary assessment within 7 days;
+- Report contents are kept confidential until the fix is released, and the reporter is credited in the release notes (with the reporter's consent).
 
-文档站本身不含密钥与后端；涉及 Framework、Web、Robot 组件的漏洞将转交对应仓库的维护流程处理。
+The documentation site itself contains no secrets and no backend; vulnerabilities involving the Framework, Web, or Robot components will be handed off to the maintenance process of the corresponding repository.
