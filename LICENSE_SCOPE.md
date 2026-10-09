@@ -12,3 +12,12 @@ This is not a blanket relicensing of third-party code, dependencies, generated f
 - `assets/js/offline-search.js`
 - `assets/vendor/`
 - `layouts/`
+
+## Bundled third-party components
+
+- `_vendor/github.com/google/docsy/` — [Docsy](https://github.com/google/docsy) v0.10.0, Apache-2.0, Copyright The Docsy Authors. Upstream LICENSE restored in-tree.
+- `_vendor/github.com/google/docsy/dependencies/` — [Docsy dependencies](https://github.com/google/docsy-dependencies) v0.7.2, Apache-2.0.
+- `_vendor/github.com/twbs/bootstrap/` — [Bootstrap](https://github.com/twbs/bootstrap) v5.3.3, MIT, Copyright (c) 2011-2024 The Bootstrap Authors. Upstream LICENSE restored in-tree.
+- `assets/vendor/jquery/jquery.min.js` — [jQuery](https://jquery.com) v3.7.1, MIT, Copyright OpenJS Foundation and other contributors. Upstream license banner retained in-file.
+- `assets/vendor/lunr/lunr.min.js` — [lunr.js](https://lunrjs.com) v2.3.9, MIT, Copyright (C) 2020 Oliver Nightingale. Upstream license banner retained in-file.
+- `assets/vendor/mermaid/mermaid.min.js` — [mermaid](https://github.com/mermaid-js/mermaid) v11.17.2, MIT. `@license` legal comments retained in the bundle.
